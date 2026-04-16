@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect width="128" height="128" rx="28" fill="#111111"/>
+  <!-- Pause icon in brand green -->
+  <rect x="36" y="34" width="20" height="60" rx="5" fill="#52b788"/>
+  <rect x="72" y="34" width="20" height="60" rx="5" fill="#52b788"/>
+  <!-- Progress bar strip at bottom -->
+  <rect x="20" y="108" width="88" height="6" rx="3" fill="rgba(255,255,255,0.1)"/>
+  <rect x="20" y="108" width="44" height="6" rx="3" fill="#52b788"/>
+</svg>

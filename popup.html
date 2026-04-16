@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReelGuard</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Header -->
+    <header>
+      <div id="logo">
+        <span id="logo-icon">⏸</span>
+        <span id="logo-text">ReelGuard</span>
+      </div>
+      <label id="toggle-wrap" title="Enable or disable ReelGuard">
+        <input type="checkbox" id="toggle-enabled" />
+        <span id="toggle-track">
+          <span id="toggle-knob"></span>
+        </span>
+      </label>
+    </header>
+
+    <!-- Session Summary -->
+    <section id="session-section">
+      <div id="session-row">
+        <div class="stat-box">
+          <div class="stat-num" id="stat-count">0</div>
+          <div class="stat-label">Reels watched</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-limit">20</div>
+          <div class="stat-label">Your limit</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-time">—</div>
+          <div class="stat-label">Session time</div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div id="popup-bar-bg">
+        <div id="popup-bar-fill"></div>
+      </div>
+      <div id="popup-status"></div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings-section">
+      <div class="setting-row">
+        <label class="setting-label" for="input-limit">Reel limit</label>
+        <div class="setting-control">
+          <input type="number" id="input-limit" min="1" max="200" value="20" />
+          <button id="btn-save-limit">Save</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <label class="setting-label" for="input-cooldown">Cooldown (min)</label>
+        <div class="setting-control">
+          <input type="number" id="input-cooldown" min="1" max="60" value="5" />
+          <button id="btn-save-cooldown">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reset -->
+    <section id="reset-section">
+      <button id="btn-reset">Reset Session</button>
+      <p id="reset-hint">Clears your count and unlocks if currently blocked.</p>
+    </section>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
