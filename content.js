@@ -6,6 +6,7 @@
 //   3. Communicate counts to background.js
 //   4. Render and update the on-page HUD overlay
 //   5. Show warning and blocking overlays at thresholds
+//   6. Support time-based limits with periodic checks
 // ============================================================
 
 (function () {
@@ -17,6 +18,8 @@
   let hudEl = null;            // The persistent HUD element
   let blockEl = null;          // The blocking overlay element
   let pollInterval = null;     // setInterval handle for URL polling
+  let timeLimitCheckInterval = null; // setInterval for time limit checks
+  let hudUpdateInterval = null; // setInterval for real-time HUD updates (time display)
 
   // ---- Constants --------------------------------------------
   // Regex to extract a reel ID from instagram.com/reels/XXXX/
@@ -32,6 +35,8 @@
     renderHUD();
     updateHUD();
     startPolling();
+    startTimeLimitCheck();
+    startHUDUpdateTimer();
 
     // Listen for background-pushed updates (e.g., UNBLOCKED after cooldown).
     chrome.runtime.onMessage.addListener((msg) => {
@@ -44,10 +49,6 @@
   }
 
   // ---- URL Polling for Reel Detection -----------------------
-  // Strategy: Poll the URL every 800ms.
-  // Instagram Reels URLs look like: /reels/CxXXXXXXX/
-  // When the reel ID segment changes, a new Reel has been watched.
-  // This is simpler and more durable than DOM scraping.
 
   function startPolling() {
     if (pollInterval) clearInterval(pollInterval);
@@ -55,8 +56,6 @@
   }
 
   async function checkForReelChange() {
-    // Re-fetch state occasionally to pick up popup changes.
-    // We do a lightweight check without full storage read most of the time.
     if (!currentState?.enabled) return;
 
     const reelId = extractReelId(window.location.href);
@@ -81,9 +80,6 @@
     if (reelId !== lastReelId) {
       lastReelId = reelId;
 
-      // Don't count the very first detection on page load as a new watch
-      // if sessionCount is already > 0. Actually, we DO count it —
-      // landing on a reel URL means you're watching a reel.
       const response = await sendMessage({ type: 'INCREMENT_REEL' });
       if (!response) return;
 
@@ -104,28 +100,82 @@
     return match ? match[1] : null;
   }
 
+  // ---- Time Limit Check (periodic) --------------------------
+  // For time-based limits, periodically check if time has been exceeded.
+
+  function startTimeLimitCheck() {
+    if (timeLimitCheckInterval) clearInterval(timeLimitCheckInterval);
+    // Check every 5 seconds while on Reels page.
+    timeLimitCheckInterval = setInterval(async () => {
+      if (!currentState?.enabled || currentState.limitMode !== 'time' || currentState.blockedAt) {
+        return;
+      }
+
+      const response = await sendMessage({ type: 'CHECK_TIME_LIMIT' });
+      if (!response) return;
+
+      currentState = response.state || currentState;
+
+      if (response.action === 'BLOCKED') {
+        showBlock();
+      }
+
+      updateHUD();
+    }, 5000);
+  }
+
+  // ---- HUD Real-time Update Timer ---------------------------
+  // Updates HUD every second to show elapsed time in real-time.
+
+  function startHUDUpdateTimer() {
+    if (hudUpdateInterval) clearInterval(hudUpdateInterval);
+    hudUpdateInterval = setInterval(() => {
+      if (currentState?.enabled && hudEl && hudEl.style.display === 'flex') {
+        updateHUD();
+      }
+    }, 1000);
+  }
+
   // ---- HUD Overlay ------------------------------------------
-  // A small persistent counter in the corner of the screen.
-  // Non-intrusive until warning/block states.
+  // Larger, clearer persistent element with dual progress bars and time display.
 
   function renderHUD() {
     if (hudEl) return;
 
     hudEl = document.createElement('div');
     hudEl.id = 'rg-hud';
-    hudEl.style.display = 'none'; // hidden until on a Reels page
+    hudEl.style.display = 'none';
     hudEl.innerHTML = `
       <div id="rg-hud-inner">
-        <div id="rg-hud-label">ReelGuard</div>
-        <div id="rg-hud-count">
-          <span id="rg-count-num">0</span>
-          <span id="rg-count-sep">/</span>
-          <span id="rg-count-limit">20</span>
+        <div id="rg-hud-header">
+          <div id="rg-hud-title">ReelGuard</div>
+          <div id="rg-hud-status"></div>
         </div>
-        <div id="rg-hud-bar-bg">
-          <div id="rg-hud-bar-fill"></div>
+
+        <div id="rg-hud-metrics">
+          <div id="rg-hud-reels">
+            <span id="rg-hud-reels-num">0</span>
+            <span id="rg-hud-reels-label">Reels</span>
+          </div>
+          <div id="rg-hud-divider"></div>
+          <div id="rg-hud-time">
+            <span id="rg-hud-time-num">0:00</span>
+            <span id="rg-hud-time-label">Time</span>
+          </div>
         </div>
-        <div id="rg-hud-status"></div>
+
+        <div id="rg-hud-bars">
+          <div id="rg-hud-bar-reels-wrap">
+            <div id="rg-hud-bar-reels-bg">
+              <div id="rg-hud-bar-reels-fill"></div>
+            </div>
+          </div>
+          <div id="rg-hud-bar-time-wrap">
+            <div id="rg-hud-bar-time-bg">
+              <div id="rg-hud-bar-time-fill"></div>
+            </div>
+          </div>
+        </div>
       </div>
     `;
     document.body.appendChild(hudEl);
@@ -134,58 +184,104 @@
   function updateHUD() {
     if (!hudEl || !currentState) return;
 
-    const count = currentState.sessionCount || 0;
-    const limit = currentState.reelLimit || 20;
-    const pct = Math.min((count / limit) * 100, 100);
+    const limitMode = currentState.limitMode || 'reels';
+    const reelCount = currentState.sessionCount || 0;
+    const reelLimit = currentState.reelLimit || 20;
+    const timeLimit = currentState.timeLimitMinutes || 15;
 
-    document.getElementById('rg-count-num').textContent = count;
-    document.getElementById('rg-count-limit').textContent = limit;
+    // Elapsed time.
+    let elapsedSeconds = 0;
+    if (currentState.sessionStart) {
+      elapsedSeconds = Math.floor((Date.now() - currentState.sessionStart) / 1000);
+    }
+    const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+    const elapsedSecs = elapsedSeconds % 60;
+    const timeStr = `${elapsedMinutes}:${elapsedSecs.toString().padStart(2, '0')}`;
 
-    const bar = document.getElementById('rg-hud-bar-fill');
-    bar.style.width = pct + '%';
+    // Update metrics.
+    document.getElementById('rg-hud-reels-num').textContent = reelCount;
+    document.getElementById('rg-hud-time-num').textContent = timeStr;
 
-    // Color the bar based on progress.
-    if (pct >= 100) {
-      bar.style.background = '#e63946';
-    } else if (pct >= 75) {
-      bar.style.background = '#f4a261';
+    // Update progress bars.
+    const reelPct = Math.min((reelCount / reelLimit) * 100, 100);
+    const timePct = Math.min((elapsedMinutes / timeLimit) * 100, 100);
+
+    const reelBarFill = document.getElementById('rg-hud-bar-reels-fill');
+    const timeBarFill = document.getElementById('rg-hud-bar-time-fill');
+
+    reelBarFill.style.width = reelPct + '%';
+    timeBarFill.style.width = timePct + '%';
+
+    // Color bars based on progress.
+    const reelColor = getBarColor(reelPct);
+    const timeColor = getBarColor(timePct);
+
+    reelBarFill.style.background = reelColor;
+    timeBarFill.style.background = timeColor;
+
+    // Adjust opacity based on active mode.
+    const reelBarWrap = document.getElementById('rg-hud-bar-reels-wrap');
+    const timeBarWrap = document.getElementById('rg-hud-bar-time-wrap');
+
+    if (limitMode === 'reels') {
+      reelBarWrap.style.opacity = '1';
+      timeBarWrap.style.opacity = '0.5';
     } else {
-      bar.style.background = '#52b788';
+      reelBarWrap.style.opacity = '0.5';
+      timeBarWrap.style.opacity = '1';
     }
 
     // Status message.
     const statusEl = document.getElementById('rg-hud-status');
+    let statusText = '';
+    let statusClass = '';
+
     if (currentState.blockedAt) {
-      statusEl.textContent = 'Limit reached';
-      statusEl.style.color = '#e63946';
-    } else if (pct >= 75) {
-      statusEl.textContent = 'Almost at limit';
-      statusEl.style.color = '#f4a261';
+      statusText = 'Blocked';
+      statusClass = 'rg-status-blocked';
+    } else if (limitMode === 'reels' && reelPct >= 75) {
+      statusText = `${Math.round(reelPct)}% — slow down`;
+      statusClass = 'rg-status-warn';
+    } else if (limitMode === 'time' && timePct >= 75) {
+      statusText = `${Math.round(timePct)}% — slow down`;
+      statusClass = 'rg-status-warn';
     } else {
-      statusEl.textContent = 'Watching';
-      statusEl.style.color = '#aaa';
+      statusText = 'Watching...';
+      statusClass = '';
     }
 
-    // Update elapsed time if session has started.
-    if (currentState.sessionStart) {
-      const elapsed = Math.floor((Date.now() - currentState.sessionStart) / 60000);
-      document.getElementById('rg-hud-label').textContent = `ReelGuard · ${elapsed}m`;
+    statusEl.textContent = statusText;
+    statusEl.className = statusClass;
+
+    // Apply warning class to HUD if needed.
+    if ((limitMode === 'reels' && reelPct >= 75 && reelPct < 100) ||
+        (limitMode === 'time' && timePct >= 75 && timePct < 100)) {
+      hudEl.classList.add('rg-hud-warn');
+    } else {
+      hudEl.classList.remove('rg-hud-warn');
+    }
+  }
+
+  function getBarColor(percentage) {
+    if (percentage >= 100) {
+      return '#9B6B6B'; // muted red for blocked
+    } else if (percentage >= 75) {
+      return '#B8956A'; // muted amber for warning
+    } else {
+      return '#7BA8A1'; // calming teal for normal
     }
   }
 
   // ---- Warning Pulse ----------------------------------------
-  // Briefly highlights the HUD to draw attention.
   function showWarningPulse() {
     if (!hudEl) return;
     hudEl.classList.add('rg-warn-pulse');
     setTimeout(() => hudEl.classList.remove('rg-warn-pulse'), 1200);
   }
 
-  // ---- Blocking Overlay -------------------------------------
-  // Covers the Reels content area and prevents casual dismissal.
+  // ---- Blocking Overlay with Password Input -----------------
 
   function showBlock() {
-    // Don't create twice.
     if (blockEl && blockEl.isConnected) {
       updateCooldownTimer();
       return;
@@ -196,24 +292,48 @@
 
     const blockedAt = currentState.blockedAt || Date.now();
     const cooldownMs = (currentState.cooldownMinutes || 5) * 60 * 1000;
-    const limit = currentState.reelLimit || 20;
+    const limitMode = currentState.limitMode || 'reels';
+    let limitMessage = '';
+
+    if (limitMode === 'reels') {
+      const limit = currentState.reelLimit || 20;
+      limitMessage = `You've watched <strong>${limit} Reels</strong> this session.`;
+    } else {
+      const limit = currentState.timeLimitMinutes || 15;
+      limitMessage = `You've spent <strong>${limit} minutes</strong> on Reels this session.`;
+    }
 
     blockEl.innerHTML = `
       <div id="rg-block-inner">
         <div id="rg-block-icon">⏸</div>
         <h2 id="rg-block-title">Time for a break.</h2>
         <p id="rg-block-body">
-          You've watched <strong>${limit} Reels</strong> this session.<br>
+          ${limitMessage}<br>
           This is your intentional stopping point.
         </p>
+
         <div id="rg-cooldown-wrap">
           <div id="rg-cooldown-label">Available again in</div>
           <div id="rg-cooldown-timer">—</div>
         </div>
-        <button id="rg-block-dismiss" title="Dismiss anyway (session count resets)">
-          Override &amp; Reset Session
-        </button>
-        <div id="rg-block-hint">Clicking override resets your count. It won't make the habit easier.</div>
+
+        <div id="rg-password-section">
+          <p id="rg-password-prompt">
+            Enter your password to continue (if you're sure):
+          </p>
+          <input
+            type="password"
+            id="rg-password-input"
+            placeholder="Password"
+            autocomplete="off"
+          />
+          <button id="rg-password-submit">Unlock</button>
+          <div id="rg-password-error" style="display: none;"></div>
+        </div>
+
+        <div id="rg-block-hint">
+          This is a moment to pause. Only continue if you've thought it through.
+        </div>
       </div>
     `;
 
@@ -225,24 +345,50 @@
       const remaining = getRemainingMs(blockedAt, cooldownMs);
       if (remaining <= 0) {
         clearInterval(timerInterval);
-        // Background alarm will send UNBLOCKED message.
       } else {
         updateCooldownTimer();
       }
     }, 1000);
 
-    // Override button — requires resetting session to bypass.
-    document.getElementById('rg-block-dismiss').addEventListener('click', async () => {
-      const confirmed = confirm(
-        'Override your Reel limit?\n\nThis will reset your session count. Your limit is there because you set it. Are you sure?'
-      );
-      if (confirmed) {
-        await sendMessage({ type: 'RESET_SESSION' });
-        currentState = await sendMessage({ type: 'GET_STATE' });
-        removeBlock();
-        updateHUD();
-      }
-    });
+    // Password submit handler — use setTimeout to ensure DOM is ready.
+    setTimeout(() => {
+      const passwordInput = document.getElementById('rg-password-input');
+      const passwordSubmit = document.getElementById('rg-password-submit');
+      const passwordError = document.getElementById('rg-password-error');
+
+      if (!passwordInput || !passwordSubmit) return;
+
+      const handlePasswordSubmit = async () => {
+        const password = passwordInput.value;
+        if (!password) return;
+
+        const response = await sendMessage({ type: 'BYPASS_WITH_PASSWORD', password });
+
+        if (response && response.success) {
+          currentState = response.state;
+          removeBlock();
+          updateHUD();
+        } else {
+          if (passwordError) {
+            passwordError.textContent = 'Incorrect password. Try again.';
+            passwordError.style.display = 'block';
+          }
+          passwordInput.value = '';
+          passwordInput.focus();
+        }
+      };
+
+      passwordSubmit.addEventListener('click', handlePasswordSubmit);
+      passwordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handlePasswordSubmit();
+        }
+      });
+
+      // Ensure input is focused and ready
+      passwordInput.focus();
+    }, 0);
   }
 
   function removeBlock() {
@@ -283,7 +429,6 @@
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(payload, (response) => {
         if (chrome.runtime.lastError) {
-          // Extension context may be invalidated on navigation; ignore gracefully.
           resolve(null);
         } else {
           resolve(response);
@@ -292,23 +437,17 @@
     });
   }
 
-  // ---- Listen for storage changes from popup ----------------
-  // If the user changes settings in the popup, re-sync state.
+  // ---- Listen for storage changes ---------------------------
   chrome.storage.onChanged.addListener(async (changes, area) => {
     if (area !== 'local') return;
     currentState = await sendMessage({ type: 'GET_STATE' });
     updateHUD();
-    // If extension was just disabled, stop polling.
-    if (changes.enabled && !changes.enabled.newValue) {
-      clearInterval(pollInterval);
-      if (hudEl) hudEl.style.display = 'none';
-      removeBlock();
-    } else if (changes.enabled && changes.enabled.newValue) {
-      startPolling();
-    }
   });
 
-  // ---- Boot -------------------------------------------------
-  init();
-
+  // ---- Start extension on page load -------------------------
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();

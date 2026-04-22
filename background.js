@@ -6,11 +6,14 @@
 // Default settings used when the extension is first installed.
 const DEFAULTS = {
   enabled: true,
-  reelLimit: 20,
-  sessionCount: 0,
-  sessionStart: null,       // timestamp (ms) when this session began
-  blockedAt: null,          // timestamp (ms) when the block was triggered
-  cooldownMinutes: 5        // how long the lockout lasts
+  limitMode: 'reels',           // 'reels' or 'time'
+  reelLimit: 20,                // max reels per session
+  timeLimitMinutes: 15,         // max time per session (minutes)
+  sessionCount: 0,              // reels watched this session
+  sessionStart: null,           // timestamp (ms) when session began
+  blockedAt: null,              // timestamp (ms) when blocked
+  cooldownMinutes: 5,           // cooldown duration (minutes)
+  overridePassword: ''          // password to bypass block (user must set)
 };
 
 // On install, initialize storage with defaults if not already set.
@@ -32,6 +35,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true; // keep channel open for async response
   }
 
+  if (msg.type === 'CHECK_TIME_LIMIT') {
+    // Content script requests a time-based block check.
+    checkTimeLimit().then(sendResponse);
+    return true;
+  }
+
   if (msg.type === 'GET_STATE') {
     // Content script requests the full current state on load.
     chrome.storage.local.get(null).then(sendResponse);
@@ -47,6 +56,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'UPDATE_SETTINGS') {
     // Popup updates limit or enabled flag.
     chrome.storage.local.set(msg.payload).then(() => sendResponse({ ok: true }));
+    return true;
+  }
+
+  if (msg.type === 'BYPASS_WITH_PASSWORD') {
+    // Content script submits password to bypass block.
+    handlePasswordBypass(msg.password).then(sendResponse);
     return true;
   }
 });
@@ -66,29 +81,128 @@ async function handleIncrementReel() {
   // Start session timer if this is the first reel.
   const sessionStart = state.sessionStart || Date.now();
   const sessionCount = (state.sessionCount || 0) + 1;
-  const limit = state.reelLimit || DEFAULTS.reelLimit;
 
   const updates = { sessionCount, sessionStart };
-
   let action = 'COUNTED';
 
-  // Check warning threshold: 75% of limit.
-  const warnAt = Math.floor(limit * 0.75);
-  if (sessionCount >= limit) {
+  // Check if we should block based on limit mode.
+  const limitMode = state.limitMode || 'reels';
+  const shouldBlock = evaluateBlock(state, sessionCount, sessionStart);
+
+  if (shouldBlock) {
     // Trigger block.
     updates.blockedAt = Date.now();
     action = 'BLOCKED';
     // Schedule alarm to auto-lift block after cooldown.
-    const cooldownMs = (state.cooldownMinutes || DEFAULTS.cooldownMinutes) * 60 * 1000;
     chrome.alarms.create('unblock', { delayInMinutes: state.cooldownMinutes || DEFAULTS.cooldownMinutes });
-    console.log(`[ReelGuard] Limit reached (${sessionCount}/${limit}). Blocked for ${state.cooldownMinutes} min.`);
-  } else if (sessionCount >= warnAt) {
-    action = 'WARN';
+    const limit = limitMode === 'reels' ? state.reelLimit : state.timeLimitMinutes;
+    const unit = limitMode === 'reels' ? 'Reels' : 'minutes';
+    console.log(`[ReelGuard] Limit reached (${sessionCount} reels / ${Math.floor((Date.now() - sessionStart) / 60000)} min). Blocked.`);
+  } else {
+    // Check warning threshold: 75% of limit.
+    const warnThreshold = getWarnThreshold(state, sessionStart);
+    if (warnThreshold.shouldWarn) {
+      action = 'WARN';
+    }
   }
 
   await chrome.storage.local.set(updates);
   const newState = await chrome.storage.local.get(null);
   return { action, state: newState };
+}
+
+// ============================================================
+// Helper: evaluate if user should be blocked.
+// ============================================================
+function evaluateBlock(state, sessionCount, sessionStart) {
+  const limitMode = state.limitMode || 'reels';
+
+  if (limitMode === 'time') {
+    const elapsedMinutes = (Date.now() - sessionStart) / 60000;
+    const timeLimit = state.timeLimitMinutes || DEFAULTS.timeLimitMinutes;
+    return elapsedMinutes >= timeLimit;
+  } else {
+    const reelLimit = state.reelLimit || DEFAULTS.reelLimit;
+    return sessionCount >= reelLimit;
+  }
+}
+
+// ============================================================
+// Helper: calculate warning threshold (75%) based on mode.
+// ============================================================
+function getWarnThreshold(state, sessionStart) {
+  const limitMode = state.limitMode || 'reels';
+  const sessionCount = state.sessionCount || 0;
+
+  if (limitMode === 'time') {
+    const elapsedMinutes = (Date.now() - sessionStart) / 60000;
+    const timeLimit = state.timeLimitMinutes || DEFAULTS.timeLimitMinutes;
+    const warnAt = timeLimit * 0.75;
+    return {
+      shouldWarn: elapsedMinutes >= warnAt && elapsedMinutes < timeLimit,
+      current: elapsedMinutes,
+      limit: timeLimit
+    };
+  } else {
+    const reelLimit = state.reelLimit || DEFAULTS.reelLimit;
+    const warnAt = Math.floor(reelLimit * 0.75);
+    return {
+      shouldWarn: sessionCount >= warnAt && sessionCount < reelLimit,
+      current: sessionCount,
+      limit: reelLimit
+    };
+  }
+}
+
+// ============================================================
+// Time-based check: called periodically from content script.
+// ============================================================
+async function checkTimeLimit() {
+  const state = await chrome.storage.local.get(null);
+
+  if (!state.enabled || state.blockedAt || state.limitMode !== 'time') {
+    return { action: 'NO_ACTION', state };
+  }
+
+  const sessionStart = state.sessionStart || Date.now();
+  const elapsedMinutes = (Date.now() - sessionStart) / 60000;
+  const timeLimit = state.timeLimitMinutes || DEFAULTS.timeLimitMinutes;
+
+  let action = 'NONE';
+
+  if (elapsedMinutes >= timeLimit) {
+    // Trigger time-based block.
+    await chrome.storage.local.set({ blockedAt: Date.now() });
+    chrome.alarms.create('unblock', { delayInMinutes: state.cooldownMinutes || DEFAULTS.cooldownMinutes });
+    action = 'BLOCKED';
+    console.log('[ReelGuard] Time limit reached. Blocked.');
+  }
+
+  const newState = await chrome.storage.local.get(null);
+  return { action, state: newState };
+}
+
+// ============================================================
+// Password bypass handler.
+// ============================================================
+async function handlePasswordBypass(submittedPassword) {
+  const state = await chrome.storage.local.get(null);
+  const savedPassword = state.overridePassword || '';
+
+  if (submittedPassword === savedPassword && savedPassword !== '') {
+    // Correct password: clear block and reset session.
+    await chrome.storage.local.set({
+      blockedAt: null,
+      sessionCount: 0,
+      sessionStart: null
+    });
+    await chrome.alarms.clear('unblock');
+    console.log('[ReelGuard] Block bypassed with correct password. Session reset.');
+    return { success: true, state: await chrome.storage.local.get(null) };
+  }
+
+  // Wrong password: return error without clearing block.
+  return { success: false, error: 'Incorrect password' };
 }
 
 // ============================================================

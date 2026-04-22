@@ -1,6 +1,6 @@
 /* ============================================================
    popup.css — Popup UI styles
-   Clean, dark, minimal aesthetic matching the on-page HUD.
+   Clean, modern, calm aesthetic with soothing color palette
    ============================================================ */
 
 * {
@@ -10,20 +10,21 @@
 }
 
 :root {
-  --bg: #111111;
-  --bg2: #1a1a1a;
-  --bg3: #222222;
-  --border: rgba(255,255,255,0.08);
+  --bg: #0D1B2A;
+  --bg2: #162A3F;
+  --bg3: #1F3A54;
+  --border: rgba(74, 144, 226, 0.15);
   --text: #ffffff;
-  --text-muted: rgba(255,255,255,0.38);
-  --accent: #52b788;
-  --warn: #f4a261;
-  --danger: #e63946;
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --text-tertiary: rgba(255, 255, 255, 0.4);
+  --primary: #4A90E2;
+  --warn: #FFA500;
+  --danger: #E74C3C;
   --radius: 10px;
 }
 
 body {
-  width: 280px;
+  width: 320px;
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
@@ -97,7 +98,7 @@ header {
 }
 
 #toggle-wrap input:checked + #toggle-track {
-  background: var(--accent);
+  background: var(--primary);
   border-color: transparent;
 }
 
@@ -109,7 +110,7 @@ header {
 /* ---- Session Section -------------------------------------- */
 
 #session-section {
-  padding: 16px 16px 12px;
+  padding: 16px 16px 14px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -133,6 +134,7 @@ header {
   line-height: 1;
   margin-bottom: 4px;
   font-variant-numeric: tabular-nums;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
 }
 
 .stat-label {
@@ -140,7 +142,7 @@ header {
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-tertiary);
 }
 
 .stat-divider {
@@ -149,27 +151,102 @@ header {
   background: var(--border);
 }
 
-#popup-bar-bg {
-  height: 4px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 2px;
+/* Progress Bars Section */
+#popup-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+#popup-bar-reels-wrap,
+#popup-bar-time-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.popup-bar-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+#popup-bar-reels-bg,
+#popup-bar-time-bg {
+  height: 6px;
+  background: rgba(74, 144, 226, 0.08);
+  border-radius: 3px;
   overflow: hidden;
-  margin-bottom: 8px;
 }
 
-#popup-bar-fill {
+#popup-bar-reels-fill,
+#popup-bar-time-fill {
   height: 100%;
-  border-radius: 2px;
-  background: var(--accent);
-  transition: width 0.4s ease, background 0.3s ease;
+  border-radius: 3px;
+  background: var(--primary);
+  width: 0%;
+  transition: width 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background 0.3s ease;
+  box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
 }
 
-#popup-status {
-  font-size: 11px;
+.popup-bar-status {
+  font-size: 10px;
   font-weight: 500;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+/* ---- Mode Section ----------------------------------------- */
+
+#mode-section {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+#mode-section .setting-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-muted);
+}
+
+.mode-toggle-wrap {
+  display: flex;
+  gap: 6px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
   text-align: center;
-  min-height: 14px;
+}
+
+.mode-btn:hover {
+  background: rgba(74, 144, 226, 0.1);
+  border-color: rgba(74, 144, 226, 0.2);
+  color: var(--text-muted);
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(74, 144, 226, 0.08));
+  border-color: rgba(74, 144, 226, 0.3);
+  color: var(--primary);
+  font-weight: 700;
 }
 
 /* ---- Settings Section ------------------------------------- */
@@ -179,21 +256,19 @@ header {
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .setting-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .setting-label {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
-  white-space: nowrap;
 }
 
 .setting-control {
@@ -202,43 +277,60 @@ header {
   align-items: center;
 }
 
-.setting-control input[type="number"] {
-  width: 58px;
-  padding: 5px 8px;
+.setting-control input[type="number"],
+.setting-control input[type="password"] {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   font-size: 13px;
   font-family: inherit;
-  text-align: center;
   outline: none;
-  transition: border-color 0.15s;
+  transition: all 0.15s;
 }
 
-.setting-control input[type="number"]:focus {
-  border-color: rgba(255,255,255,0.2);
+.setting-control input[type="number"]::placeholder,
+.setting-control input[type="password"]::placeholder {
+  color: var(--text-tertiary);
+}
+
+.setting-control input[type="number"]:focus,
+.setting-control input[type="password"]:focus {
+  border-color: rgba(74, 144, 226, 0.3);
+  background: rgba(74, 144, 226, 0.06);
 }
 
 .setting-control button,
 #btn-reset {
-  padding: 5px 11px;
+  padding: 7px 14px;
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: 6px;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 12px;
   font-family: inherit;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: all 0.15s;
   white-space: nowrap;
+  text-transform: capitalize;
 }
 
 .setting-control button:hover,
 #btn-reset:hover {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
+  background: rgba(74, 144, 226, 0.1);
+  color: var(--text);
+  border-color: rgba(74, 144, 226, 0.2);
+}
+
+.setting-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  margin-top: 2px;
 }
 
 /* ---- Reset Section ---------------------------------------- */
@@ -252,18 +344,18 @@ header {
   width: 100%;
   padding: 8px;
   margin-bottom: 6px;
-  border-color: rgba(230, 57, 70, 0.2);
-  color: rgba(230, 57, 70, 0.6);
+  border-color: rgba(231, 76, 60, 0.2);
+  color: rgba(231, 76, 60, 0.6);
 }
 
 #btn-reset:hover {
-  background: rgba(230, 57, 70, 0.08);
-  color: var(--danger);
-  border-color: rgba(230, 57, 70, 0.4);
+  background: rgba(231, 76, 60, 0.08);
+  color: #E74C3C;
+  border-color: rgba(231, 76, 60, 0.4);
 }
 
 #reset-hint {
   font-size: 10px;
-  color: var(--text-muted);
+  color: var(--text-tertiary);
   line-height: 1.4;
 }

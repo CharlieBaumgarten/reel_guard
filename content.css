@@ -1,207 +1,395 @@
 /* ============================================================
-   content.css — On-page overlay styles
-   Injected into instagram.com alongside content.js
+   content.css — On-page overlay styles for ReelGuard
+   Modern, calm, soothing aesthetic with sage/teal palette
    ============================================================ */
 
-/* ---- HUD: small persistent counter in bottom-right -------- */
+/* Color Variables */
+:root {
+  --rg-primary: #4A90E2;      /* Vibrant blue */
+  --rg-warning: #FFA500;      /* Bold orange */
+  --rg-blocked: #E74C3C;      /* Clear red */
+  --rg-bg-dark: #0D1B2A;      /* Deep navy blue */
+  --rg-text-primary: #ffffff;
+  --rg-text-secondary: rgba(255, 255, 255, 0.6);
+  --rg-text-tertiary: rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================
+   HUD: Large, prominent, readable
+   ============================================================ */
 
 #rg-hud {
   position: fixed;
-  bottom: 24px;
-  right: 20px;
-  z-index: 2147483647; /* max z-index to stay above Instagram UI */
+  bottom: 32px;
+  right: 24px;
+  z-index: 2147483647;
   display: flex;
   align-items: center;
-  pointer-events: none; /* don't interfere with Instagram clicks */
+  pointer-events: none;
   font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
 }
 
 #rg-hud-inner {
-  background: rgba(18, 18, 18, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 10px 14px;
-  min-width: 130px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+  background: rgba(13, 27, 42, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(74, 144, 226, 0.15);
+  border-radius: 16px;
+  padding: 20px 24px;
+  min-width: 280px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+              0 0 0 1px rgba(74, 144, 226, 0.1);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-#rg-hud-label {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
-  margin-bottom: 5px;
+/* Header: title + status */
+#rg-hud-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
 }
 
-#rg-hud-count {
-  font-size: 22px;
+#rg-hud-title {
+  font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
-  line-height: 1;
-  margin-bottom: 7px;
-  letter-spacing: -0.03em;
-}
-
-#rg-count-sep,
-#rg-count-limit {
-  font-size: 14px;
-  font-weight: 400;
-  color: rgba(255,255,255,0.35);
-}
-
-/* Progress bar */
-#rg-hud-bar-bg {
-  height: 3px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-
-#rg-hud-bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  background: #52b788;
-  transition: width 0.4s ease, background 0.3s ease;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 #rg-hud-status {
-  font-size: 10px;
-  font-weight: 500;
-  color: #aaa;
-  letter-spacing: 0.02em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.3);
+  transition: color 0.3s ease;
 }
 
-/* Warning pulse animation — added/removed via JS */
-@keyframes rg-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(244, 162, 97, 0.6); }
-  50%  { box-shadow: 0 0 0 10px rgba(244, 162, 97, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(244, 162, 97, 0); }
+#rg-hud-status.rg-status-warn {
+  color: var(--rg-warning);
+  font-weight: 700;
+}
+
+#rg-hud-status.rg-status-blocked {
+  color: var(--rg-blocked);
+  font-weight: 700;
+}
+
+/* Metrics: Reels and Time display */
+#rg-hud-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 16px;
+}
+
+#rg-hud-reels,
+#rg-hud-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+#rg-hud-reels-num,
+#rg-hud-time-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--rg-text-primary);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+#rg-hud-reels-label,
+#rg-hud-time-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rg-text-tertiary);
+}
+
+#rg-hud-divider {
+  width: 1px;
+  height: 44px;
+  background: rgba(74, 144, 226, 0.2);
+}
+
+/* Progress Bars */
+#rg-hud-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#rg-hud-bar-reels-wrap,
+#rg-hud-bar-time-wrap {
+  transition: opacity 0.3s ease;
+}
+
+#rg-hud-bar-reels-bg,
+#rg-hud-bar-time-bg {
+  height: 4px;
+  background: rgba(74, 144, 226, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+#rg-hud-bar-reels-fill,
+#rg-hud-bar-time-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--rg-primary);
+  width: 0%;
+  transition: width 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background 0.3s ease;
+  box-shadow: 0 0 12px rgba(74, 144, 226, 0.4);
+}
+
+/* Warning State for HUD */
+#rg-hud.rg-hud-warn #rg-hud-inner {
+  border-color: rgba(255, 165, 0, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+              0 0 0 1px rgba(255, 165, 0, 0.2),
+              0 0 24px rgba(255, 165, 0, 0.15);
+  animation: rg-hud-warn-glow 2s ease-in-out infinite;
+}
+
+@keyframes rg-hud-warn-glow {
+  0%, 100% {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 165, 0, 0.2),
+                0 0 24px rgba(255, 165, 0, 0.15);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 165, 0, 0.35),
+                0 0 32px rgba(255, 165, 0, 0.25);
+  }
+}
+
+/* Warning Pulse Animation */
+@keyframes rg-warn-pulse {
+  0% {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 0px rgba(255, 165, 0, 0.6);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 16px rgba(255, 165, 0, 0);
+  }
+  100% {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 0px rgba(255, 165, 0, 0);
+  }
 }
 
 #rg-hud.rg-warn-pulse #rg-hud-inner {
-  animation: rg-pulse 0.6s ease 2;
-  border-color: rgba(244, 162, 97, 0.4);
+  animation: rg-warn-pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) 1;
 }
 
-
-/* ---- Block Overlay: full-screen, above everything --------- */
+/* ============================================================
+   Block Overlay: Full-screen, password-protected bypass
+   ============================================================ */
 
 #rg-block {
   position: fixed;
   inset: 0;
   z-index: 2147483646;
-  background: rgba(10, 10, 10, 0.96);
-  backdrop-filter: blur(20px) saturate(0.2);
-  -webkit-backdrop-filter: blur(20px) saturate(0.2);
+  background: rgba(10, 10, 10, 0.97);
+  backdrop-filter: blur(24px) saturate(0.15);
+  -webkit-backdrop-filter: blur(24px) saturate(0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-  animation: rg-fade-in 0.35s ease forwards;
+  animation: rg-fade-in 0.4s ease forwards;
 }
 
 @keyframes rg-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 #rg-block-inner {
   text-align: center;
-  color: #fff;
-  max-width: 380px;
-  padding: 0 24px;
+  color: var(--rg-text-primary);
+  max-width: 420px;
+  padding: 0 32px;
 }
 
 #rg-block-icon {
-  font-size: 52px;
-  margin-bottom: 20px;
-  opacity: 0.7;
-  animation: rg-float 3s ease-in-out infinite;
+  font-size: 56px;
+  margin-bottom: 24px;
+  opacity: 0.6;
+  animation: rg-float 3.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 @keyframes rg-float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-6px); }
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 #rg-block-title {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 700;
-  letter-spacing: -0.04em;
-  margin: 0 0 14px;
-  color: #fff;
+  letter-spacing: -0.05em;
+  margin: 0 0 16px;
+  color: var(--rg-text-primary);
+  line-height: 1.2;
 }
 
 #rg-block-body {
   font-size: 16px;
-  line-height: 1.6;
-  color: rgba(255,255,255,0.55);
-  margin: 0 0 28px;
+  line-height: 1.7;
+  color: var(--rg-text-secondary);
+  margin: 0 0 32px;
 }
 
 #rg-block-body strong {
-  color: rgba(255,255,255,0.85);
+  color: var(--rg-text-primary);
   font-weight: 600;
 }
 
-/* Cooldown timer */
+/* Cooldown Timer */
 #rg-cooldown-wrap {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(74, 144, 226, 0.08);
+  border: 1px solid rgba(74, 144, 226, 0.15);
   border-radius: 12px;
-  padding: 14px 24px;
-  margin-bottom: 28px;
+  padding: 18px 28px;
+  margin-bottom: 32px;
   display: inline-block;
-  min-width: 160px;
+  min-width: 200px;
+  transition: all 0.3s ease;
 }
 
 #rg-cooldown-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
-  margin-bottom: 6px;
+  color: var(--rg-text-tertiary);
+  margin-bottom: 8px;
 }
 
 #rg-cooldown-timer {
-  font-size: 34px;
+  font-size: 38px;
   font-weight: 700;
-  letter-spacing: -0.04em;
-  color: #f4a261;
+  letter-spacing: -0.05em;
+  color: var(--rg-warning);
   font-variant-numeric: tabular-nums;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
 }
 
-/* Override button — intentionally subtle to discourage use */
-#rg-block-dismiss {
-  display: block;
-  margin: 0 auto 10px;
-  padding: 8px 18px;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px;
-  color: rgba(255,255,255,0.25);
-  font-size: 12px;
-  font-family: inherit;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-  letter-spacing: 0.02em;
+/* Password Input Section */
+#rg-password-section {
+  margin-bottom: 28px;
 }
 
-#rg-block-dismiss:hover {
-  color: rgba(255,255,255,0.55);
-  border-color: rgba(255,255,255,0.25);
-}
-
-#rg-block-hint {
-  font-size: 11px;
-  color: rgba(255,255,255,0.18);
+#rg-password-prompt {
+  font-size: 13px;
+  color: var(--rg-text-secondary);
+  margin: 0 0 12px;
   line-height: 1.5;
+}
+
+#rg-password-input {
+  display: block;
+  width: 100%;
   max-width: 260px;
+  margin: 0 auto 12px;
+  padding: 12px 14px;
+  background: rgba(74, 144, 226, 0.08);
+  border: 1px solid rgba(74, 144, 226, 0.2);
+  border-radius: 8px;
+  color: var(--rg-text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 400;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  letter-spacing: normal;
+  -webkit-text-fill-color: var(--rg-text-primary);
+  -webkit-autofill-text-fill-color: var(--rg-text-primary);
+}
+
+#rg-password-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
+#rg-password-input:focus {
+  outline: none;
+  border-color: rgba(74, 144, 226, 0.4);
+  background: rgba(74, 144, 226, 0.12);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+#rg-password-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#rg-password-submit {
+  display: block;
+  margin: 0 auto;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(74, 144, 226, 0.1));
+  border: 1.5px solid rgba(74, 144, 226, 0.3);
+  border-radius: 8px;
+  color: var(--rg-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#rg-password-submit:hover {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.15));
+  border-color: rgba(74, 144, 226, 0.5);
+}
+
+#rg-password-submit:active {
+  transform: scale(0.98);
+}
+
+#rg-password-error {
+  font-size: 12px;
+  color: #E74C3C;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+/* Hint Text */
+#rg-block-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.6;
+  max-width: 300px;
   margin: 0 auto;
   font-style: italic;
 }

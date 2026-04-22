@@ -32,37 +32,82 @@
         </div>
         <div class="stat-divider"></div>
         <div class="stat-box">
-          <div class="stat-num" id="stat-limit">20</div>
-          <div class="stat-label">Your limit</div>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-box">
-          <div class="stat-num" id="stat-time">—</div>
+          <div class="stat-num" id="stat-time">0:00</div>
           <div class="stat-label">Session time</div>
         </div>
       </div>
 
-      <!-- Progress bar -->
-      <div id="popup-bar-bg">
-        <div id="popup-bar-fill"></div>
+      <!-- Progress bars -->
+      <div id="popup-bars">
+        <div id="popup-bar-reels-wrap">
+          <div class="popup-bar-label">Reels</div>
+          <div id="popup-bar-reels-bg">
+            <div id="popup-bar-reels-fill"></div>
+          </div>
+          <div class="popup-bar-status" id="popup-bar-reels-status">0 / 20</div>
+        </div>
+        <div id="popup-bar-time-wrap">
+          <div class="popup-bar-label">Time</div>
+          <div id="popup-bar-time-bg">
+            <div id="popup-bar-time-fill"></div>
+          </div>
+          <div class="popup-bar-status" id="popup-bar-time-status">0 / 15 min</div>
+        </div>
       </div>
-      <div id="popup-status"></div>
+    </section>
+
+    <!-- Limit Mode Selector -->
+    <section id="mode-section">
+      <label class="setting-label">Limit Type</label>
+      <div class="mode-toggle-wrap">
+        <button id="mode-reels-btn" class="mode-btn active">Reel Count</button>
+        <button id="mode-time-btn" class="mode-btn">Time Limit</button>
+      </div>
     </section>
 
     <!-- Settings -->
     <section id="settings-section">
-      <div class="setting-row">
-        <label class="setting-label" for="input-limit">Reel limit</label>
+      <!-- Reel Limit Setting -->
+      <div class="setting-row" id="setting-reel-limit">
+        <label class="setting-label" for="input-reel-limit">Reel limit</label>
         <div class="setting-control">
-          <input type="number" id="input-limit" min="1" max="200" value="20" />
-          <button id="btn-save-limit">Save</button>
+          <input type="number" id="input-reel-limit" min="1" max="200" value="20" />
+          <button id="btn-save-reel-limit">Save</button>
         </div>
       </div>
+
+      <!-- Time Limit Setting -->
+      <div class="setting-row" id="setting-time-limit" style="display: none;">
+        <label class="setting-label" for="input-time-limit">Time limit (min)</label>
+        <div class="setting-control">
+          <input type="number" id="input-time-limit" min="1" max="120" value="15" />
+          <button id="btn-save-time-limit">Save</button>
+        </div>
+      </div>
+
+      <!-- Cooldown Setting -->
       <div class="setting-row">
         <label class="setting-label" for="input-cooldown">Cooldown (min)</label>
         <div class="setting-control">
           <input type="number" id="input-cooldown" min="1" max="60" value="5" />
           <button id="btn-save-cooldown">Save</button>
+        </div>
+      </div>
+
+      <!-- Password Setting -->
+      <div class="setting-row">
+        <label class="setting-label" for="input-password">Bypass password</label>
+        <div class="setting-control">
+          <input
+            type="password"
+            id="input-password"
+            placeholder="Set your password..."
+            autocomplete="off"
+          />
+          <button id="btn-save-password">Save</button>
+        </div>
+        <div id="password-hint" class="setting-hint">
+          You'll need this to bypass the block. Make it something you won't guess on impulse.
         </div>
       </div>
     </section>
