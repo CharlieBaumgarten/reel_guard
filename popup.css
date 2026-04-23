@@ -107,6 +107,33 @@ header {
   background: #fff;
 }
 
+/* Header Button */
+.header-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.header-btn:hover {
+  background: var(--bg3);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.header-btn:active {
+  transform: scale(0.95);
+}
+
 /* ---- Session Section -------------------------------------- */
 
 #session-section {

@@ -1,0 +1,238 @@
+/* ============================================================
+   analytics.css — Analytics page styles
+   Matches the main popup color scheme and design language
+   ============================================================ */
+
+.analytics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.back-button {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.back-button:hover {
+  background: var(--bg3);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.back-button:active {
+  transform: scale(0.95);
+}
+
+/* ---- Analytics Sections ----------------------------------- */
+
+.analytics-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+
+/* ---- Analytics Grid (Summary Cards) ----------------------- */
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.analytics-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.analytics-card:hover {
+  border-color: var(--primary);
+  background: rgba(74, 144, 226, 0.05);
+}
+
+.card-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--primary);
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+}
+
+.card-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.card-trend {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ---- Daily Chart (Bar Chart) ------------------------------ */
+
+.daily-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  height: 120px;
+}
+
+.daily-bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.daily-bar-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.daily-bar-container {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.daily-bar {
+  width: 100%;
+  background: linear-gradient(to top, var(--primary), rgba(74, 144, 226, 0.6));
+  border-radius: 4px 4px 0 0;
+  transition: all 0.2s;
+  cursor: pointer;
+  min-height: 2px;
+}
+
+.daily-bar:hover {
+  background: linear-gradient(to top, #5ba3ff, rgba(91, 163, 255, 0.7));
+  filter: brightness(1.1);
+}
+
+.daily-bar-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Time List (Horizontal Bars) ------------------------- */
+
+.time-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.time-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-day {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 65px;
+  text-align: left;
+}
+
+.time-bar-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-bar-bg {
+  flex: 1;
+  height: 20px;
+  background: var(--bg3);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+.time-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--primary), rgba(74, 144, 226, 0.6));
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.time-bar-bg:hover .time-bar-fill {
+  background: linear-gradient(to right, #5ba3ff, rgba(91, 163, 255, 0.7));
+}
+
+.time-duration {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 30px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Scrollbar Styling ------------------------------------- */
+
+body::-webkit-scrollbar {
+  width: 6px;
+}
+
+body::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+body::-webkit-scrollbar-thumb {
+  background: var(--bg3);
+  border-radius: 3px;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}

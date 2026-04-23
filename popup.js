@@ -12,6 +12,10 @@
 
   // ---- DOM refs -------------------------------------------
   const toggleEl = document.getElementById('toggle-enabled');
+  const analyticsBtn = document.getElementById('btn-analytics');
+  const backBtn = document.getElementById('back-btn');
+  const mainView = document.getElementById('main-view');
+  const analyticsView = document.getElementById('analytics-view');
 
   // Session stats
   const statCountEl = document.getElementById('stat-count');
@@ -123,6 +127,17 @@
   // ---- Enable/Disable toggle ------
   toggleEl.addEventListener('change', async () => {
     await chrome.storage.local.set({ enabled: toggleEl.checked });
+  });
+
+  // ---- Analytics navigation -------
+  analyticsBtn.addEventListener('click', () => {
+    mainView.style.display = 'none';
+    analyticsView.style.display = 'block';
+  });
+
+  backBtn.addEventListener('click', () => {
+    analyticsView.style.display = 'none';
+    mainView.style.display = 'block';
   });
 
   // ---- Mode switching --------------

@@ -5,49 +5,329 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ReelGuard</title>
   <link rel="stylesheet" href="popup.css" />
+  <link rel="stylesheet" href="analytics.css" />
 </head>
 <body>
   <div id="app">
 
-    <!-- Header -->
-    <header>
-      <div id="logo">
-        <span id="logo-icon">⏸</span>
-        <span id="logo-text">ReelGuard</span>
-      </div>
-      <label id="toggle-wrap" title="Enable or disable ReelGuard">
-        <input type="checkbox" id="toggle-enabled" />
-        <span id="toggle-track">
-          <span id="toggle-knob"></span>
-        </span>
-      </label>
-    </header>
-
-    <!-- Session Summary -->
-    <section id="session-section">
-      <div id="session-row">
-        <div class="stat-box">
-          <div class="stat-num" id="stat-count">0</div>
-          <div class="stat-label">Reels watched</div>
+    <!-- MAIN VIEW -->
+    <div id="main-view">
+      <!-- Header -->
+      <header>
+        <div id="logo">
+          <span id="logo-icon">⏸</span>
+          <span id="logo-text">ReelGuard</span>
         </div>
-        <div class="stat-divider"></div>
-        <div class="stat-box">
-          <div class="stat-num" id="stat-time">0:00</div>
-          <div class="stat-label">Session time</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="btn-analytics" class="header-btn" title="View analytics">
+            📊
+          </button>
+          <label id="toggle-wrap" title="Enable or disable ReelGuard">
+            <input type="checkbox" id="toggle-enabled" />
+            <span id="toggle-track">
+              <span id="toggle-knob"></span>
+            </span>
+          </label>
         </div>
-      </div>
+      </header>
 
-      <!-- Progress bars -->
-      <div id="popup-bars">
-        <div id="popup-bar-reels-wrap">
-          <div class="popup-bar-label">Reels</div>
-          <div id="popup-bar-reels-bg">
-            <div id="popup-bar-reels-fill"></div>
+      <!-- Session Summary -->
+      <section id="session-section">
+        <div id="session-row">
+          <div class="stat-box">
+            <div class="stat-num" id="stat-count">0</div>
+            <div class="stat-label">Reels watched</div>
           </div>
-          <div class="popup-bar-status" id="popup-bar-reels-status">0 / 20</div>
+          <div class="stat-divider"></div>
+          <div class="stat-box">
+            <div class="stat-num" id="stat-time">0:00</div>
+            <div class="stat-label">Session time</div>
+          </div>
         </div>
-        <div id="popup-bar-time-wrap">
-          <div class="popup-bar-label">Time</div>
+
+        <!-- Progress bars -->
+        <div id="popup-bars">
+          <div id="popup-bar-reels-wrap">
+            <div class="popup-bar-label">Reels</div>
+            <div id="popup-bar-reels-bg">
+              <div id="popup-bar-reels-fill"></div>
+            </div>
+            <div class="popup-bar-status" id="popup-bar-reels-status">0 / 20</div>
+          </div>
+          <div id="popup-bar-time-wrap">
+            <div class="popup-bar-label">Time</div>
+            <div id="popup-bar-time-bg">
+              <div id="popup-bar-time-fill"></div>
+            </div>
+            <div class="popup-bar-status" id="popup-bar-time-status">0 / 15 min</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Limit Mode Selector -->
+      <section id="mode-section">
+        <label class="setting-label">Limit Type</label>
+        <div class="mode-toggle-wrap">
+          <button id="mode-reels-btn" class="mode-btn active">Reel Count</button>
+          <button id="mode-time-btn" class="mode-btn">Time Limit</button>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="settings-section">
+        <!-- Reel Limit Setting -->
+        <div class="setting-row" id="setting-reel-limit">
+          <label class="setting-label" for="input-reel-limit">Reel limit</label>
+          <div class="setting-control">
+            <input type="number" id="input-reel-limit" min="1" max="200" value="20" />
+            <button id="btn-save-reel-limit">Save</button>
+          </div>
+        </div>
+
+        <!-- Time Limit Setting -->
+        <div class="setting-row" id="setting-time-limit" style="display: none;">
+          <label class="setting-label" for="input-time-limit">Time limit (min)</label>
+          <div class="setting-control">
+            <input type="number" id="input-time-limit" min="1" max="120" value="15" />
+            <button id="btn-save-time-limit">Save</button>
+          </div>
+        </div>
+
+        <!-- Cooldown Setting -->
+        <div class="setting-row">
+          <label class="setting-label" for="input-cooldown">Cooldown (min)</label>
+          <div class="setting-control">
+            <input type="number" id="input-cooldown" min="1" max="60" value="5" />
+            <button id="btn-save-cooldown">Save</button>
+          </div>
+        </div>
+
+        <!-- Password Setting -->
+        <div class="setting-row">
+          <label class="setting-label" for="input-password">Bypass password</label>
+          <div class="setting-control">
+            <input
+              type="password"
+              id="input-password"
+              placeholder="Set your password..."
+              autocomplete="off"
+            />
+            <button id="btn-save-password">Save</button>
+          </div>
+          <div id="password-hint" class="setting-hint">
+            You'll need this to bypass the block. Make it something you won't guess on impulse.
+          </div>
+        </div>
+      </section>
+
+      <!-- Reset -->
+      <section id="reset-section">
+        <button id="btn-reset">Reset Session</button>
+        <p id="reset-hint">Clears your count and unlocks if currently blocked.</p>
+      </section>
+    </div>
+
+    <!-- ANALYTICS VIEW -->
+    <div id="analytics-view" style="display: none;">
+      <!-- Header with back button -->
+      <header class="analytics-header">
+        <button id="back-btn" class="back-button" title="Back to main">
+          <span>←</span>
+        </button>
+        <div id="logo">
+          <span id="logo-icon">📊</span>
+          <span id="logo-text">Weekly Analytics</span>
+        </div>
+        <div style="width: 28px;"></div>
+      </header>
+
+      <!-- Weekly Overview -->
+      <section class="analytics-section">
+        <div class="section-title">This Week</div>
+        
+        <div class="analytics-grid">
+          <!-- Total Reels -->
+          <div class="analytics-card">
+            <div class="card-value">47</div>
+            <div class="card-label">Reels Watched</div>
+            <div class="card-trend">↑ 12% from last week</div>
+          </div>
+
+          <!-- Total Time -->
+          <div class="analytics-card">
+            <div class="card-value">3h 24m</div>
+            <div class="card-label">Time Spent</div>
+            <div class="card-trend">↓ 8% from last week</div>
+          </div>
+
+          <!-- Bypasses -->
+          <div class="analytics-card">
+            <div class="card-value">5</div>
+            <div class="card-label">Times Bypassed</div>
+            <div class="card-trend">↑ 2 more than last week</div>
+          </div>
+
+          <!-- Daily Average -->
+          <div class="analytics-card">
+            <div class="card-value">6.7</div>
+            <div class="card-label">Daily Average</div>
+            <div class="card-trend">Reels per day</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Daily Breakdown -->
+      <section class="analytics-section">
+        <div class="section-title">Daily Breakdown</div>
+        
+        <div class="daily-chart">
+          <div class="daily-bar-item">
+            <div class="daily-bar-label">Mon</div>
+            <div class="daily-bar-container">
+              <div class="daily-bar" style="height: 45%; --value-pct: 45;">
+              </div>
+              <div class="daily-bar-value">8</div>
+            </div>
+          </div>
+
+          <div class="daily-bar-item">
+            <div class="daily-bar-label">Tue</div>
+            <div class="daily-bar-container">
+              <div class="daily-bar" style="height: 30%; --value-pct: 30;">
+              </div>
+              <div class="daily-bar-value">5</div>
+            </div>
+          </div>
+
+          <div class="daily-bar-item">
+            <div class="daily-bar-label">Wed</div>
+            <div class="daily-bar-container">
+              <div class="daily-bar" style="height: 25%; --value-pct: 25;">
+              </div>
+              <div class="daily-bar-value">4</div>
+            </div>
+          </div>
+
+          <div class="daily-bar-item">
+            <div class="daily-bar-label">Thu</div>
+            <div class="daily-bar-container">
+              <div class="daily-bar" style="height: 60%; --value-pct: 60;">
+              </div>
+              <div class="daily-bar-value">10</div>
+            </div>
+          </div>
+
+          <div class="daily-bar-item">
+            <div class="daily-bar-label">Fri</div>
+            <div class="daily-bar-container">
+              <div class="daily-bar" style="height: 50%; --value-pct: 50;">
+              </div>
+              <div class="daily-bar-value">8</div>
+            </div>
+          </div>
+
+          <div class="daily-bar-item">
+            <div class="daily-bar-label">Sat</div>
+            <div class="daily-bar-container">
+              <div class="daily-bar" style="height: 70%; --value-pct: 70;">
+              </div>
+              <div class="daily-bar-value">12</div>
+            </div>
+          </div>
+
+          <div class="daily-bar-item">
+            <div class="daily-bar-label">Sun</div>
+            <div class="daily-bar-container">
+              <div class="daily-bar" style="height: 20%; --value-pct: 20;">
+              </div>
+              <div class="daily-bar-value">3</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Time Spent Breakdown -->
+      <section class="analytics-section">
+        <div class="section-title">Time Distribution</div>
+        
+        <div class="time-list">
+          <div class="time-item">
+            <div class="time-day">Monday</div>
+            <div class="time-bar-wrap">
+              <div class="time-bar-bg">
+                <div class="time-bar-fill" style="width: 35%;"></div>
+              </div>
+              <span class="time-duration">28m</span>
+            </div>
+          </div>
+
+          <div class="time-item">
+            <div class="time-day">Tuesday</div>
+            <div class="time-bar-wrap">
+              <div class="time-bar-bg">
+                <div class="time-bar-fill" style="width: 25%;"></div>
+              </div>
+              <span class="time-duration">20m</span>
+            </div>
+          </div>
+
+          <div class="time-item">
+            <div class="time-day">Wednesday</div>
+            <div class="time-bar-wrap">
+              <div class="time-bar-bg">
+                <div class="time-bar-fill" style="width: 15%;"></div>
+              </div>
+              <span class="time-duration">12m</span>
+            </div>
+          </div>
+
+          <div class="time-item">
+            <div class="time-day">Thursday</div>
+            <div class="time-bar-wrap">
+              <div class="time-bar-bg">
+                <div class="time-bar-fill" style="width: 55%;"></div>
+              </div>
+              <span class="time-duration">44m</span>
+            </div>
+          </div>
+
+          <div class="time-item">
+            <div class="time-day">Friday</div>
+            <div class="time-bar-wrap">
+              <div class="time-bar-bg">
+                <div class="time-bar-fill" style="width: 45%;"></div>
+              </div>
+              <span class="time-duration">36m</span>
+            </div>
+          </div>
+
+          <div class="time-item">
+            <div class="time-day">Saturday</div>
+            <div class="time-bar-wrap">
+              <div class="time-bar-bg">
+                <div class="time-bar-fill" style="width: 65%;"></div>
+              </div>
+              <span class="time-duration">52m</span>
+            </div>
+          </div>
+
+          <div class="time-item">
+            <div class="time-day">Sunday</div>
+            <div class="time-bar-wrap">
+              <div class="time-bar-bg">
+                <div class="time-bar-fill" style="width: 10%;"></div>
+              </div>
+              <span class="time-duration">8m</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
           <div id="popup-bar-time-bg">
             <div id="popup-bar-time-fill"></div>
           </div>
