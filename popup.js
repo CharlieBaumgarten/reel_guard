@@ -105,6 +105,9 @@
     settingReelLimitRow.style.display = isReelMode ? 'flex' : 'none';
     settingTimeLimitRow.style.display = !isReelMode ? 'flex' : 'none';
 
+    // Show/hide session section based on mode (only show for Reel Count mode)
+    document.getElementById('session-section').style.display = isReelMode ? 'block' : 'none';
+
     // Update inputs
     inputReelLimitEl.value = reelLimit;
     inputTimeLimitEl.value = timeLimit;
