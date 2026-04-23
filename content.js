@@ -59,6 +59,17 @@
     if (!currentState?.enabled) return;
 
     const reelId = extractReelId(window.location.href);
+    const isOnInstagram = window.location.href.includes('instagram.com');
+
+    // Not on Instagram anymore — reset session.
+    if (!isOnInstagram && lastReelId !== null) {
+      await sendMessage({ type: 'RESET_SESSION' });
+      const updatedState = await sendMessage({ type: 'GET_STATE' });
+      currentState = updatedState;
+      lastReelId = null;
+      if (hudEl) hudEl.style.display = 'none';
+      return;
+    }
 
     // Not on a Reels page — hide HUD.
     if (!reelId) {

@@ -127,6 +127,15 @@
   // ---- Enable/Disable toggle ------
   toggleEl.addEventListener('change', async () => {
     await chrome.storage.local.set({ enabled: toggleEl.checked });
+    
+    // Reset session when toggling
+    await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'RESET_SESSION' }, resolve);
+    });
+    
+    const fresh = await chrome.storage.local.get(null);
+    state = fresh;
+    render(fresh);
   });
 
   // ---- Analytics navigation -------
